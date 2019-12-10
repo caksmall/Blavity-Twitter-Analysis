@@ -1,5 +1,5 @@
 ---
-title: "Environmental Twitter Analysis"
+title: "Blavity Twitter Analysis"
 author: "Chad"
 date: "12/7/2019"
 output: html_document
