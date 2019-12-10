@@ -1,0 +1,1194 @@
+---
+title: "Environmental Twitter Analysis"
+author: "Chad"
+date: "12/7/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+library(readr)
+library(plyr)
+library(dplyr)
+library(tibble)
+library(ggplot2)
+library(knitr)
+library(tidyverse)
+library(stringr)
+library(readxl)
+library(dplyr)
+library(tidytext)
+library(rJava)
+library(syuzhet)
+library(rtweet)
+library(stringi)
+library(data.table)
+library(lubridate)
+
+```
+
+```{r twitter access}
+
+My_token <- create_token(
+  app = "App Name",
+  consumer_key = "00000000000000000000",
+  consumer_secret = "000000000000000000000000000000000",
+  set_renv = TRUE)
+
+
+```
+
+```{r first tweets}
+
+#Sierra Club
+Sierra_Club <- get_timelines("SierraClub", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23'
+                  )
+
+#PETA redone
+PETA <- get_timelines("peta", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+
+
+#EDF - Environmental Defense Fund
+
+EDF <- get_timelines("EnvDefenseFund", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+#NRDC - National Resource Defense Council
+
+NRDC <- get_timelines("NRDC", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+
+
+
+#Green America
+
+GreenAmerica <- get_timelines("GreenAmerica", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+#Nature Conservancy
+
+NatCons <- get_timelines("nature_org", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+#Earth Justice
+
+EJ <- get_timelines("Earthjustice", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+
+
+
+
+
+#US Environmental Protection Agency
+
+EPA <- get_timelines("EPA", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+```
+
+```{r part two newer tweets}
+
+#sierra club test over the whole year only gives from end of august until present (can only pull ~3200 tweets)
+SCNew <- get_timelines("SierraClub", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23'
+                  )
+
+#PETA
+PETANew <- get_timelines("peta", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+
+
+#EDF - Environmental Defense Fund
+
+EDFNew <- get_timelines("EnvDefenseFund", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+#NRDC - National Resource Defense Council
+
+NRDCNew <- get_timelines("NRDC", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+
+#Green America
+
+GreenAmericaNew <- get_timelines("GreenAmerica", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+#Nature Conservancy
+
+NatConsNew <- get_timelines("nature_org", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+#Earth Justice
+
+EJNew <- get_timelines("Earthjustice", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+
+#US Environmental Protection Agency
+
+EPANew <- get_timelines("EPA", 
+                        n = 10000, 
+                        language = 'en',
+                        since = '2019-01-01', 
+                        until = '2019-10-23',
+                      
+                  )
+
+```
+
+```{r merge and remove dups}
+
+#sierra club 
+SC_Combined <- rbind(Sierra_Club, SCNew)
+
+SC_Combined <- SC_Combined[!duplicated(SC_Combined$status_id), ]
+
+#PETA redone
+
+PETA_Combined <- rbind(PETA, PETANew)
+
+PETA_Combined <- PETA_Combined[!duplicated(PETA_Combined$status_id), ]
+
+
+#EDF - Environmental Defense Fund
+
+EDF_Combined <- rbind(EDF, EDFNew)
+
+EDF_Combined <- EDF_Combined[!duplicated(EDF_Combined$status_id), ]
+
+#NRDC - National Resource Defense Council
+
+NRDC_Combined <- rbind(NRDC, NRDCNew)
+
+NRDC_Combined <- NRDC_Combined[!duplicated(NRDC_Combined$status_id), ]
+
+
+#Green America
+
+GA_Combined <- rbind(GreenAmerica, GreenAmericaNew)
+
+GA_Combined <- GA_Combined[!duplicated(GA_Combined$status_id), ]
+
+#Nature Conservancy
+
+NatCons_Combined <- rbind(NatCons, NatConsNew)
+
+NatCons_Combined <- NatCons_Combined[!duplicated(NatCons_Combined$status_id), ]
+
+#Earth Justice
+
+EJ_Combined <- rbind(EJ, EJNew)
+
+EJ_Combined <- EJ_Combined[!duplicated(EJ_Combined$status_id), ]
+
+
+#US Environmental Protection Agency
+
+EPA_Combined <- rbind(EPA, EPANew)
+
+EPA_Combined <- EPA_Combined[!duplicated(EPA_Combined$status_id), ]
+
+
+```
+
+```{r sierra Club categories}
+
+#remove retweets
+
+SC_Organic_Tweets <- SC_Combined[SC_Combined$is_retweet==FALSE,]
+
+#remove replies
+
+SC_Organic_Tweets <- subset(SC_Organic_Tweets, is.na(SC_Organic_Tweets$reply_to_status_id))
+
+```
+
+
+
+
+```{r PETA categories}
+
+#remove retweets
+
+PETA_Organic_Tweets <- PETA_Combined[PETA_Combined$is_retweet==FALSE,]
+
+#remove replies
+
+PETA_Organic_Tweets <- subset(PETA_Organic_Tweets, is.na(PETA_Organic_Tweets$reply_to_status_id))
+
+```
+
+
+```{r EDF categories}
+
+#remove retweets
+
+EDF_Organic_Tweets <- EDF_Combined[EDF_Combined$is_retweet==FALSE,]
+
+#remove replies
+
+EDF_Organic_Tweets <- subset(EDF_Organic_Tweets, is.na(EDF_Organic_Tweets$reply_to_status_id))
+
+
+```
+
+```{r NRDC categories}
+
+#remove retweets
+
+NRDC_Organic_Tweets <- NRDC_Combined[NRDC_Combined$is_retweet==FALSE,]
+
+#remove replies
+
+NRDC_Organic_Tweets <- subset(NRDC_Organic_Tweets, is.na(NRDC_Organic_Tweets$reply_to_status_id))
+
+
+```
+
+
+```{r GreenAmerica categories}
+
+#remove retweets
+
+GA_Organic_Tweets <- GA_Combined[GA_Combined$is_retweet==FALSE,]
+
+#remove replies
+
+GA_Organic_Tweets <- subset(GA_Organic_Tweets, is.na(GA_Organic_Tweets$reply_to_status_id))
+
+
+```
+
+```{r NatCons categories}
+
+#remove retweets
+
+NC_Organic_Tweets <- NatCons_Combined[NatCons_Combined$is_retweet==FALSE,]
+
+#remove replies
+
+NC_Organic_Tweets <- subset(NC_Organic_Tweets, is.na(NC_Organic_Tweets$reply_to_status_id))
+
+
+```
+
+```{r Earth Justice categories}
+
+#remove retweets
+
+EJ_Organic_Tweets <- EJ_Combined[EJ_Combined$is_retweet==FALSE,]
+
+#remove replies
+
+EJ_Organic_Tweets <- subset(EJ_Organic_Tweets, is.na(EJ_Organic_Tweets$reply_to_status_id))
+
+
+```
+
+
+```{r EPA categories}
+
+#remove retweets
+
+EPA_Organic_Tweets <- EPA_Combined[EPA_Combined$is_retweet==FALSE,]
+
+#remove replies
+
+EPA_Organic_Tweets <- subset(EPA_Organic_Tweets, is.na(EPA_Organic_Tweets$reply_to_status_id))
+
+
+```
+
+
+```{r Sierra Club Engagement}
+
+#adding favorite count
+
+SC_Organic_Tweets <- SC_Organic_Tweets %>%
+  arrange(-favorite_count)
+
+#adding retweet count from other users
+
+SC_Organic_Tweets <- SC_Organic_Tweets %>%
+  arrange(-retweet_count)
+
+#keeping only retweets
+
+SC_retweets <- SC_Combined[SC_Combined$is_retweet==TRUE,]
+
+#keeping only the replies
+
+SC_replies <- subset(SC_Combined, !is.na(SC_Combined$reply_to_status_id))
+
+
+```
+
+```{r PETA Engagement}
+
+#adding favorite count
+
+PETA_Organic_Tweets <- PETA_Organic_Tweets %>%
+  arrange(-favorite_count)
+
+#adding retweet count from other users
+
+PETA_Organic_Tweets <- PETA_Organic_Tweets %>%
+  arrange(-retweet_count)
+
+#keeping only retweets
+
+PETA_retweets <- PETA_Combined[PETA_Combined$is_retweet==TRUE,]
+
+#keeping only the replies
+
+PETA_replies <- subset(PETA_Combined, !is.na(PETA_Combined$reply_to_status_id))
+
+
+```
+
+
+```{r EDF Engagement}
+
+#adding favorite count
+
+EDF_Organic_Tweets <- EDF_Organic_Tweets %>%
+  arrange(-favorite_count)
+
+#adding retweet count from other users
+
+EDF_Organic_Tweets <- EDF_Organic_Tweets %>%
+  arrange(-retweet_count)
+
+#keeping only retweets
+
+EDF_retweets <- EDF_Combined[EDF_Combined$is_retweet==TRUE,]
+
+#keeping only the replies
+
+EDF_replies <- subset(EDF_Combined, !is.na(EDF_Combined$reply_to_status_id))
+
+
+```
+
+```{r NRDC Engagement}
+
+#adding favorite count
+
+NRDC_Organic_Tweets <- NRDC_Organic_Tweets %>%
+  arrange(-favorite_count)
+
+#adding retweet count from other users
+
+NRDC_Organic_Tweets <- NRDC_Organic_Tweets %>%
+  arrange(-retweet_count)
+
+#keeping only retweets
+
+NRDC_retweets <- NRDC_Combined[NRDC_Combined$is_retweet==TRUE,]
+
+#keeping only the replies
+
+NRDC_replies <- subset(NRDC_Combined, !is.na(NRDC_Combined$reply_to_status_id))
+
+
+```
+
+```{r GA Engagement}
+
+#adding favorite count
+
+GA_Organic_Tweets <- GA_Organic_Tweets %>%
+  arrange(-favorite_count)
+
+#adding retweet count from other users
+
+GA_Organic_Tweets <- GA_Organic_Tweets %>%
+  arrange(-retweet_count)
+
+#keeping only retweets
+
+GA_retweets <- GA_Combined[GA_Combined$is_retweet==TRUE,]
+
+#keeping only the replies
+
+GA_replies <- subset(GA_Combined, !is.na(GA_Combined$reply_to_status_id))
+
+
+```
+
+```{r NatCons Engagement}
+
+#adding favorite count
+
+NC_Organic_Tweets <- NC_Organic_Tweets %>%
+  arrange(-favorite_count)
+
+#adding retweet count from other users
+
+NC_Organic_Tweets <- NC_Organic_Tweets %>%
+  arrange(-retweet_count)
+
+#keeping only retweets
+
+NC_retweets <- NatCons_Combined[NatCons_Combined$is_retweet==TRUE,]
+
+#keeping only the replies
+
+NC_replies <- subset(NatCons_Combined, !is.na(NatCons_Combined$reply_to_status_id))
+
+
+```
+
+```{r Earth Justice Engagement}
+
+#adding favorite count
+
+EJ_Organic_Tweets <- EJ_Organic_Tweets %>%
+  arrange(-favorite_count)
+
+#adding retweet count from other users
+
+EJ_Organic_Tweets <- EJ_Organic_Tweets %>%
+  arrange(-retweet_count)
+
+#keeping only retweets
+
+EJ_retweets <- EJ_Combined[EJ_Combined$is_retweet==TRUE,]
+
+#keeping only the replies
+
+EJ_replies <- subset(EJ_Combined, !is.na(EJ_Combined$reply_to_status_id))
+
+
+```
+
+```{r EPA Engagement}
+
+#adding favorite count
+
+EPA_Organic_Tweets <- EPA_Organic_Tweets %>%
+  arrange(-favorite_count)
+
+#adding retweet count from other users
+
+EPA_Organic_Tweets <- EPA_Organic_Tweets %>%
+  arrange(-retweet_count)
+
+#keeping only retweets
+
+EPA_retweets <- EPA_Combined[EPA_Combined$is_retweet==TRUE,]
+
+#keeping only the replies
+
+EPA_replies <- subset(EPA_Combined, !is.na(EPA_Combined$reply_to_status_id))
+
+
+```
+
+```{r filter SC}
+
+#filter for multiple terms at once
+SC_organic_racism <- SC_Organic_Tweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+SC_retweets_racism <- SC_retweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+SC_replies_racism <- SC_replies %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+SC_racism <- rbind(SC_organic_racism, SC_replies_racism, SC_retweets_racism)
+
+```
+
+
+```{r filter PETA}
+
+#filter for multiple terms at once
+PETA_organic_racism <- PETA_Organic_Tweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+PETA_retweets_racism <- PETA_retweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+PETA_replies_racism <- PETA_replies %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+PETA_racism <- rbind(PETA_organic_racism, PETA_replies_racism, PETA_retweets_racism)
+
+```
+
+
+```{r filter EDF}
+
+#filter for multiple terms at once
+EDF_organic_racism <- EDF_Organic_Tweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+EDF_retweets_racism <- EDF_retweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+EDF_replies_racism <- EDF_replies %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+EDF_racism <- rbind(EDF_organic_racism, EDF_replies_racism, EDF_retweets_racism)
+
+```
+
+```{r filter NRDC}
+
+#filter for multiple terms at once
+NRDC_organic_racism <- NRDC_Organic_Tweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+NRDC_retweets_racism <- NRDC_retweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+NRDC_replies_racism <- NRDC_replies %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+NRDC_racism <- rbind(NRDC_organic_racism, NRDC_replies_racism, NRDC_retweets_racism)
+
+```
+
+
+```{r filter GA}
+
+#filter for multiple terms at once
+GA_organic_racism <- GA_Organic_Tweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+GA_retweets_racism <- GA_retweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+GA_replies_racism <- GA_replies %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+GA_racism <- rbind(GA_organic_racism, GA_replies_racism, GA_retweets_racism)
+
+```
+
+```{r filter NatCons}
+
+#filter for multiple terms at once
+NC_organic_racism <- NC_Organic_Tweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+NC_retweets_racism <- NC_retweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+NC_replies_racism <- NC_replies %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+NC_racism <- rbind(NC_organic_racism, NC_replies_racism, NC_retweets_racism)
+
+```
+
+```{r filter EJ}
+
+#filter for multiple terms at once
+EJ_organic_racism <- EJ_Organic_Tweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+EJ_retweets_racism <- EJ_retweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+EJ_replies_racism <- EJ_replies %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+EJ_racism <- rbind(EJ_organic_racism, EJ_replies_racism, EJ_retweets_racism)
+
+```
+
+
+```{r filter EPA}
+
+#filter for multiple terms at once
+EPA_organic_racism <- EPA_Organic_Tweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+EPA_retweets_racism <- EPA_retweets %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+EPA_replies_racism <- EPA_replies %>%
+  filter(str_detect(text, "racism|environmental racism|people of color|communities of color|#environmentalracism|environmental justice|#environmentaljustice"))
+
+EPA_racism <- rbind(EPA_organic_racism, EPA_replies_racism, EPA_retweets_racism)
+
+```
+
+```{r EPA climate filter}
+
+
+#filter for multiple terms at once
+EPA_organic_climate <- EPA_Organic_Tweets %>%
+  filter(str_detect(text, "climate|climate change|warming|global warming|#climatechange|#globalwarming"))
+
+EPA_retweets_climate <- EPA_retweets %>%
+  filter(str_detect(text, "climate|climate change|warming|global warming|#climatechange|#globalwarming"))
+
+EPA_replies_climate <- EPA_replies %>%
+  filter(str_detect(text, "climate|climate change|warming|global warming|#climatechange|#globalwarming"))
+
+EPA_climate <- rbind(EPA_organic_climate, EPA_replies_climate, EPA_retweets_climate)
+
+
+```
+
+
+```{r export tweets}
+
+fwrite(EDF_Combined, file ="EDF Tweets.csv")
+fwrite(EDF_racism, file ="EDF Racism Tweets.csv")
+fwrite(EJ_Combined, file ="Earth Justice Tweets.csv")
+fwrite(EJ_racism, file ="Earth Justice Racism Tweets.csv")
+fwrite(EPA_Combined, file ="EPA Tweets.csv")
+fwrite(EPA_racism, file ="EPA Racism Tweets Tweets.csv")
+fwrite(EPA_climate, file ="EPA Climate Tweets.csv")
+fwrite(GA_Combined, file ="Green America Tweets.csv")
+fwrite(GA_racism, file ="Green America Racism Tweets.csv")
+fwrite(NatCons_Combined, file ="Nature Conservancy Tweets.csv")
+fwrite(NRDC_Combined, file ="NRDC Tweets.csv")
+fwrite(NRDC_racism, file ="NRDC Racism Tweets.csv")
+fwrite(PETA_Combined, file ="PETA Tweets.csv")
+fwrite(PETA_racism, file ="PETA Racism Tweets.csv")
+fwrite(SC_Combined, file ="Sierra Club Tweets.csv")
+fwrite(SC_racism, file ="Sierra Club Racism Tweets.csv")
+
+fwrite(ENVE_law_racism, file ="Law Groups Environmental Racism Tweets.csv")
+
+fwrite(ENVE_law_race_organic_fixed, file ="Law Groups Environmental Racism No Retweets.csv")
+
+fwrite(Law_dated, file ="Autumn Tweets from Law Orgs on Environmental Racism.csv")
+
+fwrite(Law_9_13, file ="Sept 13th Law Org Tweets on Environmental Racism.csv")
+
+fwrite(Law_9_20, file ="Sept 20th Law Org Tweets on Environmental Racism.csv")
+
+fwrite(Law_11_6, file ="Nov 6th Law Org Tweets on Environmental Racism.csv")
+
+```
+
+
+```{r Sierra Club Racism Tweet Freq}
+SC_racism %>%
+  ts_plot("1 day") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
+  ggplot2::labs(
+    x = NULL, y = NULL,
+    title = "Frequency of Sierra Club Tweets on Environmental Racism",
+    subtitle = "Twitter status (tweet) counts aggregated from 5,275 Tweets using daily intervals from August 23, 2019 to November 28, 2019",
+    caption = "Source: Data collected from Twitter's REST API via rtweet"
+  )
+
+
+
+```
+
+```{r earth justice racism frequency}
+
+EJ_racism %>%
+  ts_plot("1 day") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
+  ggplot2::labs(
+    x = NULL, y = NULL,
+    title = "Frequency of Earth Justice Tweets on Environmental Racism",
+    subtitle = "Twitter status (tweet) counts aggregated using daily intervals",
+    caption = "\nSource: Data collected from Twitter's REST API via rtweet"
+  )
+
+
+
+```
+
+
+```{r epa histograms}
+
+EPA_racism %>%
+  ts_plot("1 day") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
+  ggplot2::labs(
+    x = NULL, y = NULL,
+    title = "Frequency of US Environmental Protection Agency Tweets on Environmental Racism",
+    subtitle = "Twitter status (tweet) counts aggregated using daily intervals",
+    caption = "\nSource: Data collected from Twitter's REST API via rtweet"
+  )
+
+
+EPA_climate %>%
+  ts_plot("1 day") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
+  ggplot2::labs(
+    x = NULL, y = NULL,
+    title = "Frequency of US Environmental Protection Agency Tweets on Climate Change",
+    subtitle = "Twitter status (tweet) counts aggregated using daily intervals",
+    caption = "\nSource: Data collected from Twitter's REST API via rtweet"
+  )
+
+
+```
+
+
+```{r EDF histogram}
+EDF_racism %>%
+  ts_plot("1 day") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
+  ggplot2::labs(
+    x = NULL, y = NULL,
+    title = "Frequency of Environmental Defense Fund Tweets on Environmental Racism",
+    subtitle = "Twitter status (tweet) counts aggregated using daily intervals",
+    caption = "\nSource: Data collected from Twitter's REST API via rtweet"
+  )
+
+
+
+```
+
+```{r nrdc histogram}
+
+NRDC_racism %>%
+  ts_plot("1 day") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
+  ggplot2::labs(
+    x = NULL, y = NULL,
+    title = "Frequency of NRDC Tweets on Environmental Racism",
+    subtitle = "Twitter status (tweet) counts aggregated from 4,026 Tweets using daily intervals from June 7, 2019 to November 28, 2019",
+    caption = "Source: Data collected from Twitter's REST API via rtweet"
+  )
+
+
+```
+
+```{r words in PETA Replies}
+
+
+#orgnizing text into a bag of words for analysis
+
+#pull out random garbage
+
+PETA_replies_fixed <- PETA_replies
+
+PETA_replies_fixed$text <- gsub("https\\S*", "", PETA_replies_fixed$text)
+
+PETA_replies_fixed$text <- gsub("@\\S*", "", PETA_replies_fixed$text)
+
+PETA_replies_fixed$text <- gsub("amp", "", PETA_replies_fixed$text)
+
+PETA_replies_fixed$text <- gsub("[\r\n]", "", PETA_replies_fixed$text)
+
+PETA_replies_fixed$text <- gsub("[[:punct:]]", "", PETA_replies_fixed$text)
+
+#splitting the tweets into individual words
+
+PETA_words <- PETA_replies_fixed %>%
+  select(text) %>%
+  unnest_tokens(word, text)
+
+
+#remove articles and other meaningless words
+
+PETA_words <- PETA_words %>%
+    anti_join(stop_words)
+
+
+```
+
+```{r plot PETA word freq}
+#create bar chart for most top 15 frequent words
+
+PETA_words %>%
+  count(word, sort = TRUE) %>%
+  top_n(15) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word, y = n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(y = "Count",
+       x = "Unique Words",
+       title = "Most Frequent Words In PETA Replies",
+       subtitle = "Articles Removed")
+
+
+```
+
+
+
+```{r sentiment analysis}
+#determine the sentiment of a twitter stream
+
+#converting tweets to ASCII to trackle strange characters
+
+PETA_words <- iconv(PETA_words, from = "UTF-8", to = "ASCII", sub = "")
+
+#removing retweets in case needed
+PETA_words <- gsub("(RT|via) ((?:\\b\\w*@\\w+)+)", "", PETA_words)
+
+#removing mentions
+PETA_words <- gsub("@\\w+", "", PETA_words)
+
+peta_ew_sentiments <- get_nrc_sentiment((PETA_words))
+sentimentscores <- data.frame(colSums(peta_ew_sentiments[,]))
+
+names(sentimentscores) <- "Score"
+
+sentimentscores <- cbind("sentiment"=rownames(sentimentscores), sentimentscores)
+
+rownames(sentimentscores) <- NULL
+
+ggplot(data = sentimentscores, aes(x = sentiment, y = Score)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+             theme(legend.position = "none") +
+             xlab("Sentiments") + ylab("Scores") +
+             ggtitle("Total PETA Reply sentiment based on scores") + theme_minimal()
+
+
+
+```
+
+```{r words in PETA Organic Tweets}
+
+
+#orgnizing text into a bag of words for analysis
+
+#pull out random garbage
+
+PETA_organic_fixed <- PETA_Organic_Tweets
+
+PETA_organic_fixed$text <- gsub("https\\S*", "", PETA_organic_fixed$text)
+
+PETA_organic_fixed$text <- gsub("@\\S*", "", PETA_organic_fixed$text)
+
+PETA_organic_fixed$text <- gsub("amp", "", PETA_organic_fixed$text)
+
+PETA_organic_fixed$text <- gsub("[\r\n]", "", PETA_organic_fixed$text)
+
+PETA_organic_fixed$text <- gsub("[[:punct:]]", "", PETA_organic_fixed$text)
+
+#splitting the tweets into individual words
+
+PETA_organic_words <- PETA_organic_fixed %>%
+  select(text) %>%
+  unnest_tokens(word, text)
+
+
+#remove articles and other meaningless words
+
+PETA_organic_words <- PETA_organic_words %>%
+    anti_join(stop_words)
+
+
+```
+
+```{r plot PETA organic word freq}
+#create bar chart for most top 15 frequent words
+
+PETA_organic_words %>%
+  count(word, sort = TRUE) %>%
+  top_n(15) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word, y = n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(y = "Count",
+       x = "Unique Words",
+       title = "Most Frequent Words In PETA Tweets",
+       subtitle = "Articles Removed")
+
+
+```
+
+```{r PETA Organic sentiment analysis}
+#determine the sentiment of a twitter stream
+
+#converting tweets to ASCII to trackle strange characters
+
+PETA_organic_words <- iconv(PETA_organic_words, from = "UTF-8", to = "ASCII", sub = "")
+
+#removing retweets in case needed
+PETA_organic_words <- gsub("(RT|via) ((?:\\b\\w*@\\w+)+)", "", PETA_organic_words)
+
+#removing mentions
+PETA_organic_words <- gsub("@\\w+", "", PETA_organic_words)
+
+peta_org_ew_sentiments <- get_nrc_sentiment((PETA_organic_words))
+peta_org_sentimentscores <- data.frame(colSums(peta_org_ew_sentiments[,]))
+
+names(peta_org_sentimentscores) <- "Score"
+
+peta_org_sentimentscores <- cbind("sentiment"=rownames(peta_org_sentimentscores), peta_org_sentimentscores)
+
+rownames(peta_org_sentimentscores) <- NULL
+
+ggplot(data = peta_org_sentimentscores, aes(x = sentiment, y = Score)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+             theme(legend.position = "none") +
+             xlab("Sentiments") + ylab("Scores") +
+             ggtitle("Total PETA Tweet sentiment based on scores") + theme_minimal()
+
+
+
+```
+
+
+```{r law word usage}
+ENVE_law_racism <- rbind(EDF_racism, EJ_racism, NRDC_racism, SC_racism)
+
+#remove retweets
+
+ENVE_law_race_organic <- ENVE_law_racism[ENVE_law_racism$is_retweet==FALSE,]
+
+#remove replies
+
+ENVE_law_race_organic <- subset(ENVE_law_race_organic, is.na(ENVE_law_race_organic$reply_to_status_id))
+  
+
+#pull out random garbage
+
+ENVE_law_race_organic_fixed <- ENVE_law_race_organic
+
+ENVE_law_race_organic_fixed$text <- gsub("https\\S*", "", ENVE_law_race_organic_fixed$text)
+
+ENVE_law_race_organic_fixed$text <- gsub("@\\S*", "", ENVE_law_race_organic_fixed$text)
+
+ENVE_law_race_organic_fixed$text <- gsub("amp", "", ENVE_law_race_organic_fixed$text)
+
+ENVE_law_race_organic_fixed$text <- gsub("[\r\n]", "", ENVE_law_race_organic_fixed$text)
+
+ENVE_law_race_organic_fixed$text <- gsub("[[:punct:]]", "", ENVE_law_race_organic_fixed$text)
+
+#splitting the tweets into individual words
+
+ENVE_law_race_words <- ENVE_law_race_organic_fixed %>%
+  select(text) %>%
+  unnest_tokens(word, text)
+
+
+#remove articles and other meaningless words
+
+ENVE_law_race_words <- ENVE_law_race_words %>%
+    anti_join(stop_words)
+  
+ENVE_law_race_words %>%
+  count(word, sort = TRUE) %>%
+  top_n(15) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word, y = n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(y = "Count",
+       x = "Unique Words",
+       title = "Most Frequent Words In Law Org Tweets",
+       subtitle = "Articles Removed")
+
+
+
+```
+
+
+```{r law sentiment}
+
+#determine the sentiment of a twitter stream
+
+#converting tweets to ASCII to trackle strange characters
+
+ENVE_law_race_words <- iconv(ENVE_law_race_words, from = "UTF-8", to = "ASCII", sub = "")
+
+#removing retweets in case needed
+ENVE_law_race_words <- gsub("(RT|via) ((?:\\b\\w*@\\w+)+)", "", ENVE_law_race_words)
+
+#removing mentions
+ENVE_law_race_words <- gsub("@\\w+", "", ENVE_law_race_words)
+
+ENVE_law_org_ew_sentiments <- get_nrc_sentiment((ENVE_law_race_words))
+ENVE_law_org_sentimentscores <- data.frame(colSums(ENVE_law_org_ew_sentiments[,]))
+
+names(ENVE_law_org_sentimentscores) <- "Score"
+
+ENVE_law_org_sentimentscores <- cbind("sentiment"=rownames(ENVE_law_org_sentimentscores), ENVE_law_org_sentimentscores)
+
+rownames(ENVE_law_org_sentimentscores) <- NULL
+
+ggplot(data = ENVE_law_org_sentimentscores, aes(x = sentiment, y = Score)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+             theme(legend.position = "none") +
+             xlab("Sentiments") + ylab("Scores") +
+             ggtitle("Total Environmental Law Org Sentiment based on scores") + theme_minimal()
+
+
+```
+
+```{r date experiment}
+
+
+#remove specific time of day
+
+ENVE_law_racism[3] <- lapply(ENVE_law_racism[3], sub, pattern="\\s+.*", replacement="")
+ENVE_law_racism$Month <- format(as.Date(ENVE_law_racism$created_at, format='%m/%d/%Y'), '%B')
+
+#remove the new month column
+
+ENVE_law_racism <- select(ENVE_law_racism,-c(91))
+
+ENVE_law_racism$created_at <- as.Date(ENVE_law_racism$created_at)
+
+#change column title to date
+names(ENVE_law_racism)[names(ENVE_law_racism) == "created_at"] <- "date"
+
+#convert to date-time
+ENVE_law_racism$created_at <- as_datetime(ENVE_law_racism$created_at)
+
+#filter by date
+
+Law_dated <- ENVE_law_racism[ENVE_law_racism$date >= "2019-08-23" & ENVE_law_racism$date <= "2019-11-27",]
+
+ENVE_law_racism
+
+#law insights
+summary(as.factor(Law_dated$screen_name))
+summary(as.factor(ENVE_law_racism$screen_name))
+
+#remove time
+Law_dated[3] <- lapply(Law_dated[3], sub, pattern="\\s+.*", replacement="")
+Law_dated$Month <- format(as.Date(Law_dated$date, format='%m/%d/%Y'), '%B')
+
+#remove the new month column
+
+Law_dated <- select(Law_dated,-c(91))
+
+
+```
+
+
+```{r law insights by date}
+
+#date insights
+summary(as.factor(Law_dated$date))
+
+
+# pulling Sept 20th tweets
+Law_9_20 <- ENVE_law_racism[which(str_detect(ENVE_law_racism$date, "2019-09-20")),]
+
+#pulling Sept 13th tweets
+Law_9_13 <- ENVE_law_racism[which(str_detect(ENVE_law_racism$date, "2019-09-13")),]
+
+#pulling Nov 6th Tweets
+Law_11_6 <- ENVE_law_racism[which(str_detect(ENVE_law_racism$date, "2019-11-06")),]
+
+summary(as.factor(Law_9_20$screen_name))
+summary(as.factor(Law_9_13$screen_name))
+summary(as.factor(Law_11_6$screen_name))
+
+```
+
+```{r law histogram}
+
+
+#set limits for histogram (if you remove the time from the date, the graph fails)
+Law_dated %>%
+  ts_plot("1 day") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
+  ggplot2::labs(
+    x = NULL, y = NULL,
+    title = "Frequency of All Environmental Law Orgs on Environmental Racism",
+    subtitle = "Twitter status (tweet) counts aggregated using daily intervals from August 23, 2019 to November 28, 2019",
+    caption = "Source: Data collected from Twitter's REST API via rtweet"
+  )
+
+```
+
+
+
+
+
